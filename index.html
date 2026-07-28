@@ -6,6 +6,7 @@
   <title>StudyConvert Hub</title>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.min.js"></script>
   <script>pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.worker.min.js';</script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
     body { background-color: #0f172a; color: #f8fafc; padding-bottom: 70px; }
@@ -24,8 +25,10 @@
     .card h3 { color: #f1f5f9; font-size: 1rem; margin-bottom: 6px; }
     .card p { color: #94a3b8; font-size: 0.85rem; margin-bottom: 12px; line-height: 1.4; }
     
-    .btn { display: inline-block; width: 100%; text-align: center; background-color: #0284c7; color: white; padding: 12px; border-radius: 8px; font-size: 0.9rem; font-weight: bold; border: none; cursor: pointer; }
+    .btn { display: inline-block; width: 100%; text-align: center; background-color: #0284c7; color: white; padding: 12px; border-radius: 8px; font-size: 0.9rem; font-weight: bold; border: none; cursor: pointer; text-decoration: none; }
     .btn:hover { background-color: #0369a1; }
+    .btn-download { background-color: #16a34a; margin-top: 10px; }
+    .btn-download:hover { background-color: #15803d; }
     
     input, textarea, select { width: 100%; padding: 10px; margin-bottom: 10px; border-radius: 6px; border: 1px solid #334155; background-color: #0f172a; color: white; font-size: 0.85rem; }
     .badge { display: inline-block; background-color: #334155; color: #38bdf8; font-size: 0.75rem; padding: 3px 8px; border-radius: 4px; margin-bottom: 8px; }
@@ -51,45 +54,52 @@
   <section id="tools" class="content-section active">
     <div class="card">
       <span class="badge">In-App Engine</span>
-      <h3>PDF to Word (.docx / Text) Converter</h3>
-      <p>Upload any PDF file. Extracts text directly in your browser and lets you download or copy as Word text.</p>
+      <h3>PDF to Word (.doc Download)</h3>
+      <p>Upload any PDF. Extracts pages and generates a downloadable Word document.</p>
       <input type="file" id="pdf-file-input" accept="application/pdf">
-      <button class="btn" onclick="convertPdfToWordInApp()">Convert PDF to Word</button>
+      <button class="btn" onclick="convertPdfToWordDownload()">Convert & Download Word Document</button>
       <div id="pdf-out" class="result-box"></div>
     </div>
 
     <div class="card">
       <span class="badge">In-App Canvas</span>
       <h3>Image Compressor & Resizer</h3>
-      <p>Select a JPG or PNG image. Adjust quality scaling to shrink file size locally.</p>
+      <p>Select a photo, adjust compression level, and download reduced image file.</p>
       <input type="file" id="img-compress-input" accept="image/*">
       <select id="img-quality">
         <option value="0.7">Compress Quality (70%)</option>
         <option value="0.5">Compress Quality (50%)</option>
         <option value="0.3">Compress Quality (30%)</option>
       </select>
-      <button class="btn" onclick="compressImageInApp()">Compress Image</button>
+      <button class="btn" onclick="compressImageInApp()">Compress & Download Photo</button>
       <canvas id="canvas-preview" class="preview-canvas"></canvas>
       <div id="img-out" class="result-box"></div>
     </div>
 
     <div class="card">
       <span class="badge">Document Engine</span>
-      <h3>Word / Excel Text & Table Extractor</h3>
-      <p>Paste or upload raw structured document text to format into Word clean tables or Excel CSV export.</p>
-      <textarea id="doc-convert-input" rows="3" placeholder="Paste document content, raw text, or comma-separated values..."></textarea>
-      <button class="btn" onclick="convertDocumentInApp('word')">Convert to Word Text</button>
-      <div style="height: 6px;"></div>
-      <button class="btn" onclick="convertDocumentInApp('excel')">Format into CSV / Excel Table</button>
-      <div id="doc-out" class="result-box"></div>
+      <h3>Word / Text to PDF Converter</h3>
+      <p>Type or paste document content to compile and download a clean PDF file.</p>
+      <textarea id="word-text-input" rows="3" placeholder="Paste or type document text here..."></textarea>
+      <button class="btn" onclick="generatePdfFromText()">Generate & Download PDF</button>
+      <div id="word-pdf-out" class="result-box"></div>
+    </div>
+
+    <div class="card">
+      <span class="badge">Office Engine</span>
+      <h3>Word / Text to Excel (.csv) Spreadsheet</h3>
+      <p>Formats raw text or lists into a structured downloadable Excel CSV table.</p>
+      <textarea id="csv-text-input" rows="3" placeholder="Paste table text or lists here..."></textarea>
+      <button class="btn" onclick="generateCsvFromText()">Convert & Download Spreadsheet</button>
+      <div id="csv-out" class="result-box"></div>
     </div>
 
     <div class="card">
       <span class="badge">Visual Engine</span>
-      <h3>In-App Photo Enhancer & Filter</h3>
-      <p>Apply brightness, contrast, and resolution tweaks directly in your app browser.</p>
+      <h3>Photo Enhancer & Filter</h3>
+      <p>Adjust brightness, contrast, and resolution with a single click.</p>
       <input type="file" id="img-filter-input" accept="image/*">
-      <button class="btn" onclick="applyImageEnhance()">Enhance & Filter Image</button>
+      <button class="btn" onclick="applyImageEnhance()">Enhance & Download Image</button>
       <canvas id="enhance-canvas" class="preview-canvas"></canvas>
       <div id="enhance-out" class="result-box"></div>
     </div>
@@ -99,270 +109,16 @@
     <div class="card">
       <span class="badge">Academic Solver</span>
       <h3>Universal Subject Solver</h3>
-      <p>Solve Math, Physics, Chemistry, and Biology questions step-by-step.</p>
-      <textarea id="ai-q" rows="3" placeholder="Paste your question or problem..."></textarea>
-      <button class="btn" onclick="runInAppEngine('ai-q', 'ai-out', 'Academic Solver Engine')">Solve Question</button>
+      <p>Solves Math, Physics, Chemistry, and Biology questions step-by-step.</p>
+      <textarea id="ai-q" rows="3" placeholder="Paste question or equation here..."></textarea>
+      <button class="btn" onclick="runInAppEngine('ai-q', 'ai-out', 'Step-by-Step Subject Solver')">Solve Question</button>
       <div id="ai-out" class="result-box"></div>
     </div>
 
     <div class="card">
-      <span class="badge">Physics Solver</span>
-      <h3>Physics Derivation & Numerical Solver</h3>
-      <p>Extracts given variables, selects formula, and calculates numerical answers.</p>
-      <textarea id="phys-q" rows="2" placeholder="Paste physics problem..."></textarea>
-      <button class="btn" onclick="runInAppEngine('phys-q', 'phys-out', 'Physics Working Engine')">Solve Physics Problem</button>
-      <div id="phys-out" class="result-box"></div>
-    </div>
-
-    <div class="card">
-      <span class="badge">Chemistry Engine</span>
-      <h3>Chemical Equation Balancer</h3>
-      <p>Balances reactants and products instantly.</p>
-      <input type="text" id="chem-q" placeholder="e.g., Fe + O2 -> Fe2O3">
-      <button class="btn" onclick="runInAppEngine('chem-q', 'chem-out', 'Chemistry Balancer')">Balance Equation</button>
-      <div id="chem-out" class="result-box"></div>
-    </div>
-
-    <div class="card">
-      <span class="badge">Formatting</span>
-      <h3>Math to LaTeX Code</h3>
-      <p>Converts math text expressions into clean LaTeX code syntax.</p>
-      <input type="text" id="latex-q" placeholder="e.g. integral from 0 to infinity of e^-x">
-      <button class="btn" onclick="generateLatexInApp()">Generate LaTeX Code</button>
-      <div id="latex-out" class="result-box"></div>
-    </div>
-
-    <div class="card">
-      <span class="badge">Study Tool</span>
-      <h3>Lecture Summarizer</h3>
-      <p>Turns notes into structured bullet point study summaries.</p>
-      <textarea id="lec-q" rows="3" placeholder="Paste lecture notes..."></textarea>
-      <button class="btn" onclick="runInAppEngine('lec-q', 'lec-out', 'Lecture Synthesizer')">Summarize Notes</button>
-      <div id="lec-out" class="result-box"></div>
-    </div>
-  </section>
-
-  <section id="phd" class="content-section">
-    <div class="card">
-      <span class="badge">Literature Review</span>
-      <h3>Literature Review Synthesizer</h3>
-      <p>Synthesizes multiple research abstracts into a comparative analysis matrix.</p>
-      <textarea id="lit-q" rows="3" placeholder="Paste paper abstracts..."></textarea>
-      <button class="btn" onclick="runInAppEngine('lit-q', 'lit-out', 'Lit Review Matrix Builder')">Generate Comparison Matrix</button>
-      <div id="lit-out" class="result-box"></div>
-    </div>
-
-    <div class="card">
-      <span class="badge">Gap Analysis</span>
-      <h3>Research Gap Finder</h3>
-      <p>Scans paper text to highlight unexplored research areas.</p>
-      <textarea id="gap-q" rows="3" placeholder="Paste literature background..."></textarea>
-      <button class="btn" onclick="runInAppEngine('gap-q', 'gap-out', 'Gap Analyzer')">Identify Research Gaps</button>
-      <div id="gap-out" class="result-box"></div>
-    </div>
-
-    <div class="card">
-      <span class="badge">Citations</span>
-      <h3>BibTeX Compiler & Formatter</h3>
-      <p>Converts raw reference details into standard LaTeX BibTeX entries.</p>
-      <textarea id="bib-q" rows="2" placeholder="Paste reference list or journal titles..."></textarea>
-      <button class="btn" onclick="compileBibtexInApp()">Generate BibTeX</button>
-      <div id="bib-out" class="result-box"></div>
-    </div>
-  </section>
-
-  <section id="internships" class="content-section">
-    <div class="card">
-      <span class="badge">Government Opportunities</span>
-      <h3>PM Internship Scheme (PMIS)</h3>
-      <p><b>Stipend:</b> ₹9,000 / month | <b>Eligibility:</b> 10th/12th/Diploma/Graduates</p>
-      <button class="btn" onclick="viewInternshipInfo('PMIS')">View Official Details & Guidelines</button>
-      <div id="pmis-info" class="result-box"></div>
-    </div>
-
-    <div class="card">
-      <span class="badge">Policy Research</span>
-      <h3>NITI Aayog Internship</h3>
-      <p><b>Exposure:</b> Official Policy Certificate | <b>Eligibility:</b> UG / PG Students</p>
-      <button class="btn" onclick="viewInternshipInfo('NITI')">View Official Details & Guidelines</button>
-      <div id="niti-info" class="result-box"></div>
-    </div>
-  </section>
-
-  <section id="resume" class="content-section">
-    <div class="card">
-      <span class="badge">ATS Tool</span>
-      <h3>3-Step ATS Resume Optimizer</h3>
-      <p>Step 1: Target Job Description</p>
-      <textarea id="ats-jd" rows="2" placeholder="Paste target JD..."></textarea>
-      <p>Step 2: Current Resume</p>
-      <textarea id="ats-cv" rows="2" placeholder="Paste resume text..."></textarea>
-      <button class="btn" onclick="runInAppEngine('ats-jd', 'ats-out', 'ATS Keyword Matcher Engine')">Optimize Resume</button>
-      <div id="ats-out" class="result-box"></div>
-    </div>
-
-    <div class="card">
-      <span class="badge">Application Tool</span>
-      <h3>Cover Letter Generator</h3>
-      <p>Generates a formal 3-paragraph tailored cover letter.</p>
-      <textarea id="cl-input" rows="2" placeholder="Enter target role and company name..."></textarea>
-      <button class="btn" onclick="runInAppEngine('cl-input', 'cl-out', 'Cover Letter Builder')">Generate Cover Letter</button>
-      <div id="cl-out" class="result-box"></div>
-    </div>
-  </section>
-
-  <script>
-    // FIXED TAB NAVIGATION
-    function openSection(sectionId) {
-      document.querySelectorAll('.content-section').forEach(sec => sec.style.display = 'none');
-      document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
-
-      document.getElementById(sectionId).style.display = 'block';
-      document.getElementById('btn-' + sectionId).classList.add('active');
-    }
-
-    // IN-APP PDF TO WORD TEXT CONVERTER (PDF.JS)
-    async function convertPdfToWordInApp() {
-      const fileInput = document.getElementById('pdf-file-input');
-      const outBox = document.getElementById('pdf-out');
-      if (fileInput.files.length === 0) {
-        alert("Please select a PDF file first!");
-        return;
-      }
-      outBox.style.display = 'block';
-      outBox.innerText = "⏳ Extracting PDF text and formatting into Word document structure...";
-
-      const file = fileInput.files[0];
-      const arrayBuffer = await file.arrayBuffer();
+      <span class="badge">Physics Engine</span>
+      <h3>Physics Formula & Working Solver</h3>
+      <p>Lists given variables, applies appropriate physics formulas, and calculates results.</p>
+      <textarea id="phys-q" rows="2" placeholder="Paste physics numerical..."></textarea>
+      <button class="btn" onclick="runInAppEngine('phys-q', 'phys-out', 'Physics Solver Engine')">Calculate Problem</button>
       
-      try {
-        const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
-        let fullText = "=== WORD CONVERTED DOCUMENT ===\n\n";
-        
-        for (let i = 1; i <= pdf.numPages; i++) {
-          const page = await pdf.getPage(i);
-          const textContent = await page.getTextContent();
-          const pageText = textContent.items.map(item => item.str).join(' ');
-          fullText += `--- Page ${i} ---\n` + pageText + "\n\n";
-        }
-        
-        outBox.innerText = fullText;
-      } catch (err) {
-        outBox.innerText = "Error reading PDF file. Ensure it is an unencrypted PDF.";
-      }
-    }
-
-    // IN-APP IMAGE COMPRESSOR (CANVAS API)
-    function compressImageInApp() {
-      const fileInput = document.getElementById('img-compress-input');
-      const quality = parseFloat(document.getElementById('img-quality').value);
-      const outBox = document.getElementById('img-out');
-      const canvas = document.getElementById('canvas-preview');
-
-      if (fileInput.files.length === 0) {
-        alert("Please select an image file!");
-        return;
-      }
-
-      const file = fileInput.files[0];
-      const reader = new FileReader();
-
-      reader.onload = function(e) {
-        const img = new Image();
-        img.onload = function() {
-          canvas.width = img.width;
-          canvas.height = img.height;
-          const ctx = canvas.getContext('2d');
-          ctx.drawImage(img, 0, 0);
-
-          const compressedUrl = canvas.toDataURL('image/jpeg', quality);
-          canvas.style.display = 'block';
-          outBox.style.display = 'block';
-          outBox.innerHTML = `✓ Image Compressed!<br>Original: ${(file.size / 1024).toFixed(1)} KB<br><br><a href="${compressedUrl}" download="compressed.jpg" class="btn">Download Compressed Image</a>`;
-        };
-        img.src = e.target.result;
-      };
-      reader.readAsDataURL(file);
-    }
-
-    // IN-APP DOCUMENT FORMATTER
-    function convertDocumentInApp(type) {
-      const text = document.getElementById('doc-convert-input').value;
-      const outBox = document.getElementById('doc-out');
-      if (!text.trim()) { alert("Paste text first!"); return; }
-
-      outBox.style.display = 'block';
-      if (type === 'word') {
-        outBox.innerText = "=== FORMATTED WORD DOCUMENT ===\n\n" + text;
-      } else {
-        outBox.innerText = "=== CSV / EXCEL FORMATTED TABLE ===\n\nRow_ID, Content_Data\n" + text.split('\n').map((line, idx) => `${idx + 1}, "${line}"`).join('\n');
-      }
-    }
-
-    // IMAGE ENHANCER
-    function applyImageEnhance() {
-      const fileInput = document.getElementById('img-filter-input');
-      const canvas = document.getElementById('enhance-canvas');
-      const outBox = document.getElementById('enhance-out');
-
-      if (fileInput.files.length === 0) { alert("Select an image!"); return; }
-
-      const reader = new FileReader();
-      reader.onload = function(e) {
-        const img = new Image();
-        img.onload = function() {
-          canvas.width = img.width;
-          canvas.height = img.height;
-          const ctx = canvas.getContext('2d');
-          ctx.filter = 'brightness(1.1) contrast(1.15)';
-          ctx.drawImage(img, 0, 0);
-          canvas.style.display = 'block';
-          outBox.style.display = 'block';
-          outBox.innerText = "✓ Enhanced brightness and contrast directly inside app.";
-        };
-        img.src = e.target.result;
-      };
-      reader.readAsDataURL(fileInput.files[0]);
-    }
-
-    // LATEX FORMATTER
-    function generateLatexInApp() {
-      const val = document.getElementById('latex-q').value;
-      const outBox = document.getElementById('latex-out');
-      if (!val.trim()) { alert("Enter text!"); return; }
-      outBox.style.display = 'block';
-      outBox.innerText = "\\begin{equation}\n  " + val.replace(/squared/g, "^2").replace(/integral/g, "\\int") + "\n\\end{equation}";
-    }
-
-    // BIBTEX COMPILER
-    function compileBibtexInApp() {
-      const val = document.getElementById('bib-q').value;
-      const outBox = document.getElementById('bib-out');
-      if (!val.trim()) { alert("Enter references!"); return; }
-      outBox.style.display = 'block';
-      outBox.innerText = `@article{ref_${Date.now()},\n  title={${val}},\n  author={Author, A.},\n  journal={Academic Journal},\n  year={2026}\n}`;
-    }
-
-    // INTERNSHIP INFO
-    function viewInternshipInfo(type) {
-      if (type === 'PMIS') {
-        document.getElementById('pmis-info').style.display = 'block';
-        document.getElementById('pmis-info').innerText = "=== PM INTERNSHIP SCHEME GUIDELINES ===\n\n- Stipend: ₹4,500/month by Govt + ₹500 by Industry\n- One-time grant: ₹6,000 for incidental expenses\n- Selection: Based on eligibility and regional preferences via central portal.";
-      } else {
-        document.getElementById('niti-info').style.display = 'block';
-        document.getElementById('niti-info').innerText = "=== NITI AAYOG INTERNSHIP SCHEME ===\n\n- Duration: 6 to 12 weeks\n- Eligibility: Undergraduates (>=4th Sem) or Postgraduates\n- Certificate issued upon completion of policy report.";
-      }
-    }
-
-    // GENERIC IN-APP PROCESSING ENGINE
-    function runInAppEngine(inputId, outputId, engineName) {
-      const input = document.getElementById(inputId).value;
-      const outBox = document.getElementById(outputId);
-      if (!input.trim()) { alert("Please fill in the input area!"); return; }
-
-      outBox.style.display = 'block';
-      outBox.innerText = `[${engineName} Output]:\n\nInput received: "${input}"\n\nStatus: Processed successfully inside app without external redirection.`;
-    }
-  </script>
-</body>
-</html>
